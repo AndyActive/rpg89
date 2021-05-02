@@ -43,14 +43,10 @@ public class PlayerServiceImpl implements PlayerService {
             Profession profession = Profession.valueOf(params.get("profession"));
             Date birthday = new Date(Long.parseLong(params.get("birthday")));
             Boolean banned = Boolean.parseBoolean(params.getOrDefault("banned", "false"));
-            //Boolean banned = params.containsKey("banned") && "false".equals(params.get("banned"));
             Integer experience = Integer.parseInt(params.get("experience"));
-            //String level =params.getOrDefault( "level", "0" );
-            //Integer untilNextLevel = params.containsKey("untilNextLevel") ? Integer.parseInt(params.get("untilNextLevel")) : null;
             Player player = new Player(name, title, race, profession, experience, birthday, banned);
             player.calculateLevel();
             player.calculateUntilNextLevel();
-            System.out.println(player);
             return playerRepository.save(player);
         } catch (NullPointerException | IllegalArgumentException | ClassCastException e) {
             return null;

@@ -50,16 +50,17 @@ public class PlayerController {
 
         @GetMapping("{id}")
         public @ResponseBody ResponseEntity<Player> getPlayer(
-                @PathVariable Long id
+                @PathVariable String id
         ){
             try {
-                if (!playerService.isIdValid(id)) {
+                long longId = Long.parseLong(id);
+                if (!playerService.isIdValid(longId)) {
                     return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
                 }
-                if (!playerService.existsById(id)) {
+                if (!playerService.existsById(longId)) {
                     return new ResponseEntity<>(HttpStatus.NOT_FOUND);
                 } else {
-                    return new ResponseEntity<>(playerService.findById(id), HttpStatus.OK);
+                    return new ResponseEntity<>(playerService.findById(longId), HttpStatus.OK);
                 }
             } catch (NullPointerException | IllegalArgumentException e) {
                 return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
@@ -88,13 +89,14 @@ public class PlayerController {
 
         @DeleteMapping("{id}")
         public @ResponseBody
-        ResponseEntity<Player> deletePlayer(@PathVariable Long id){
+        ResponseEntity<Player> deletePlayer(@PathVariable String id){
             ResponseEntity<Player> okResponse = new ResponseEntity<>(HttpStatus.OK);
             ResponseEntity<Player> badResponse = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             ResponseEntity<Player> nfResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);//404
             try {
-                if (!playerService.isIdValid(id)) return badResponse;
-                boolean result = playerService.deleteById(id);
+                long longId = Long.parseLong(id);
+                if (!playerService.isIdValid(longId)) return badResponse;
+                boolean result = playerService.deleteById(longId);
                 if (result) return okResponse;
                 else return nfResponse;
             } catch (NullPointerException | IllegalArgumentException e) {
