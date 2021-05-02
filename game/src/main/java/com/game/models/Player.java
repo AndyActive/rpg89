@@ -163,15 +163,6 @@ public class Player {
     }
 
     public static void main(String[] args) {
-//        Calendar prodDateValue = Calendar.getInstance();
-//        prodDateValue.setTimeInMillis((new Date()).getTime());
-//        prodDateValue.add(Calendar.YEAR, 1000);
-//        Race race = Race.ELF;
-//        Profession profession = Profession.CLERIC;
-//        Boolean isBanned = false;
-//        Player player = new Player("ANDY", "BLA", race,profession,0, 0,0 ,prodDateValue.getTime());
-//        Integer upLevel = 50*(player.level+1)*(player.level+2)-player.getExperience();
-//        player.setLevel(upLevel);
-//
+
     }
 }
