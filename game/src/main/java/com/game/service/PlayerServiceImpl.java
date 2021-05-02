@@ -84,13 +84,13 @@ public class PlayerServiceImpl implements PlayerService {
     }
 
     @Override
-    public String deleteById(Long id) {
+    public boolean deleteById(Long id) {
         boolean isEXX = playerRepository.existsById(id);
         if (isEXX) {
             playerRepository.deleteById(id);
-            return "200";
+            return true;
         } else {
-            return "400";
+            return false;
         }
     }
 

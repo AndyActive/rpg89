@@ -91,16 +91,14 @@ public class PlayerController {
         ResponseEntity<Player> deletePlayer(@PathVariable Long id){
             ResponseEntity<Player> okResponse = new ResponseEntity<>(HttpStatus.OK);
             ResponseEntity<Player> badResponse = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-            ResponseEntity<Player> nfResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            ResponseEntity<Player> nfResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);//404
             try {
                 if (!playerService.isIdValid(id)) return badResponse;
-                String result = playerService.deleteById(id);
-                if (result == null) return badResponse;
-                if ("400".equals(result)) return nfResponse;
-                if ("200".equals(result)) return okResponse;
+                boolean result = playerService.deleteById(id);
+                if (result) return okResponse;
+                else return nfResponse;
             } catch (NullPointerException | IllegalArgumentException e) {
                 return badResponse;
             }
-            return badResponse;
         }
     }

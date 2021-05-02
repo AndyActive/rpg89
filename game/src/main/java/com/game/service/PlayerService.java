@@ -10,7 +10,7 @@ public interface PlayerService {
     List<Player> findAll(Pageable pageable);
     Player add(Map<String, String> params);
     Player updatePlayer(Long id, Map<String, String> params);
-    String deleteById(Long id);
+    boolean deleteById(Long id);
     List<Player> findByParams(Map<String, String> params);
     Integer countByParams(Map<String, String> params);
     Integer count();
