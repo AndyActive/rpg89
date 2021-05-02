@@ -9,21 +9,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.util.*;
 import java.util.stream.Collectors;
+
 @Service
-public class PlayerServiceImpl implements PlayerService{
+public class PlayerServiceImpl implements PlayerService {
     @Autowired
     private final PlayerRepository playerRepository;
 
     public PlayerServiceImpl(PlayerRepository playerRepository) {
-        this.playerRepository= playerRepository;
+        this.playerRepository = playerRepository;
     }
 
     @Override
@@ -39,12 +42,14 @@ public class PlayerServiceImpl implements PlayerService{
             Race race = Race.valueOf(params.get("race"));
             Profession profession = Profession.valueOf(params.get("profession"));
             Date birthday = new Date(Long.parseLong(params.get("birthday")));
-            Boolean banned = params.containsKey("banned") && "false".equals(params.get("banned"));
+            Boolean banned = Boolean.parseBoolean(params.getOrDefault("banned", "false"));
+            //Boolean banned = params.containsKey("banned") && "false".equals(params.get("banned"));
             Integer experience = Integer.parseInt(params.get("experience"));
-            Integer level = Integer.parseInt(params.get("level"));
-            Player player = new Player(name, title, race, profession,experience,0,0,birthday,banned);
-            player.updateExperience();
-            player.setUntilNextLevel(player.toUpdateExperience(player));
+            //String level =params.getOrDefault( "level", "0" );
+            //Integer untilNextLevel = params.containsKey("untilNextLevel") ? Integer.parseInt(params.get("untilNextLevel")) : null;
+            Player player = new Player(name, title, race, profession, experience, birthday, banned);
+            player.calculateLevel();
+            player.calculateUntilNextLevel();
             System.out.println(player);
             return playerRepository.save(player);
         } catch (NullPointerException | IllegalArgumentException | ClassCastException e) {
@@ -60,9 +65,8 @@ public class PlayerServiceImpl implements PlayerService{
         String title = params.getOrDefault("title", null);
         Profession profession = params.containsKey("profession") ? Profession.valueOf(params.get("profession")) : null;
         Race race = params.containsKey("race") ? Race.valueOf(params.get("race")) : null;
-        Date birthday = params.containsKey("prodDate") ? new Date(Long.parseLong(params.get("prodDate"))) : null;
+        Date birthday = params.containsKey("birthday") ? new Date(Long.parseLong(params.get("birthday"))) : null;
         Boolean banned = params.containsKey("banned") ? "true".equals(params.get("banned")) : null;
-        Integer level = params.containsKey("level") ? Integer.parseInt(params.get("level")) : null;
         Integer experience = params.containsKey("experience") ? Integer.parseInt(params.get("experience")) : null;
         if (name != null) result.setName(name);
         if (title != null) result.setTitle(title);
@@ -70,8 +74,11 @@ public class PlayerServiceImpl implements PlayerService{
         if (race != null) result.setRace(race);
         if (birthday != null) result.setBirthday(birthday);
         if (banned != null) result.setBanned(banned);
-        if (level != null) result.setLevel(level);
-        if (experience != null) result.setExperience(experience);
+        if (experience != null) {
+            result.setExperience(experience);
+            result.calculateLevel();
+            result.calculateUntilNextLevel();
+        }
         playerRepository.saveAndFlush(result);
         return result;
     }
@@ -122,7 +129,7 @@ public class PlayerServiceImpl implements PlayerService{
         } else {
             pageable = PageRequest.of(pageNumber, pageSize);
         }
-        return playerRepository.findAllByParams(name, title, race,profession, after, before, banned, minExperience, maxExperience, minLevel, maxLevel,untilNextLevel, pageable).stream().collect(Collectors.toList());
+        return playerRepository.findAllByParams(name, title, race, profession, after, before, banned, minExperience, maxExperience, minLevel, maxLevel, untilNextLevel, pageable).stream().collect(Collectors.toList());
 
     }
 
@@ -147,7 +154,7 @@ public class PlayerServiceImpl implements PlayerService{
         Integer minLevel = params.containsKey("minLevel") ? Integer.parseInt(params.get("minLevel")) : null;
         Integer maxLevel = params.containsKey("maxLevel") ? Integer.parseInt(params.get("maxLevel")) : null;
         Integer untilNextLevel = params.containsKey("untilNextLevel") ? Integer.parseInt(params.get("untilNextLevel")) : null;
-        return playerRepository.countByParams(name, title, race,profession, after, before, banned, minExperience, maxExperience, minLevel, maxLevel,untilNextLevel);
+        return playerRepository.countByParams(name, title, race, profession, after, before, banned, minExperience, maxExperience, minLevel, maxLevel, untilNextLevel);
     }
 
     @Override
@@ -171,37 +178,110 @@ public class PlayerServiceImpl implements PlayerService{
 
     @Override
     public boolean isParamsValid(Map<String, String> params) {
-        String name = params.getOrDefault("name", null);
-        String title = params.getOrDefault("title", null);
-        Integer birthdayDateY = null;
-        if (params.containsKey("birthday")) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(Long.parseLong(params.get("birthday")));
-            birthdayDateY = calendar.get(Calendar.YEAR);
-        }
-        Integer experience = params.containsKey("experience") ? Integer.parseInt(params.get("experience")) : null;
-        Integer level = params.containsKey("level") ? Integer.parseInt(params.get("level")) : null;
-        boolean result =
-                (name == null || title == null || name.length() <= 12 && name.length() > 0 && title.length() <= 30 && title.length() > 0)
-                        && (birthdayDateY == null || birthdayDateY >= 2000 && birthdayDateY <= 3000)
-                        && (experience == null || experience >= 0 && experience < 10000000)
-                        && (level == null || level >= 0 && level <= 9999);
-        try {
-            if (params.containsKey("profession")) {
-                Profession profession = Profession.valueOf(params.get("profession"));
-            }
-        } catch (IllegalArgumentException | NullPointerException e) {
-            result = false;
-        }
-        try {
-            if (params.containsKey("race")) {
-                Race race = Race.valueOf(params.get("race"));
-            }
-        } catch (IllegalArgumentException | NullPointerException e) {
-            result = false;
-        }
-        return result;
+        return validName(params.get("name")) &&
+                validTitle(params.get("title")) &&
+                validBirthday(params.get("birthday")) &&
+                validExperience(params.get("experience")) &&
+                validProfession(params.get("profession")) &&
+                validRace(params.get("race"));
+    }
 
+    @Override
+    public boolean validParamsForUpdate(Map<String, String> params) {
+        boolean result = true;
+        if (params.containsKey("name")) {
+            result = validName(params.get("name"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        if (params.containsKey("title")) {
+            result = validTitle(params.get("title"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        if (params.containsKey("birthday")) {
+            result = validBirthday(params.get("birthday"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        if (params.containsKey("experience")) {
+            result = validExperience(params.get("experience"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        if (params.containsKey("profession")) {
+            result = validProfession(params.get("profession"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        if (params.containsKey("race")) {
+            result = validRace(params.get("race"));
+        }
+        if (!result) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean validName(String name) {
+        return name != null && name.length() <= 12 && name.length() > 0;
+    }
+
+    public boolean validTitle(String title) {
+        return title != null && title.length() <= 30 && title.length() > 0;
+    }
+
+    public boolean validBirthday(String strBirthday) {
+        try {
+            long birthday = Long.parseLong(strBirthday);
+            if (birthday > 0) {
+                Date dateBirthday = new Date(birthday);
+                Date minDate = Date.valueOf(LocalDate.of(2000, 1, 1));
+                Date maxDate = Date.valueOf(LocalDate.of(3000, 1, 1));
+                return dateBirthday.after(minDate) && dateBirthday.before(maxDate);
+            }
+            return false;
+        } catch (NumberFormatException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    public boolean validExperience(String experience) {
+        try {
+            int exp = Integer.parseInt(experience);
+            return exp<=10000000 && exp >= 0;
+        } catch (NumberFormatException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    public boolean validProfession(String profession) {
+        try {
+            Profession.valueOf(profession);
+            return true;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return false;
+        }
+    }
+
+    public boolean validRace(String race) {
+        try {
+            Race.valueOf(race);
+            return true;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return false;
+        }
     }
 
     @Override
@@ -211,9 +291,10 @@ public class PlayerServiceImpl implements PlayerService{
                 && params.containsKey("race")
                 && params.containsKey("profession")
                 && params.containsKey("birthday")
-                && params.containsKey("banned")
+                //&& params.containsKey("banned")
                 && params.containsKey("experience")
-                && params.containsKey("level")
-                && params.containsKey("untilNextLevel");
+                /*&& params.containsKey("level")*/
+                //  && params.containsKey("untilNextLevel")
+                ;
     }
 }

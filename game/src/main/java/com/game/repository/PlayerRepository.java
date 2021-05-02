@@ -26,7 +26,7 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
             + "and (:minExperience is not null and u.experience >= :minExperience or :minExperience is null) "
             + "and (:maxExperience is not null and u.experience <= :maxExperience or :maxExperience is null) "
             + "and (:minLevel is not null and u.level >= :minLevel or :minLevel is null) "
-            + "and (:maxLevel is not null and u.level >= :maxLevel or :maxLevel is null) "
+            + "and (:maxLevel is not null and u.level <= :maxLevel or :maxLevel is null) "
             + "and (:untilNextLevel is not null and u.untilNextLevel <= :untilNextLevel or :untilNextLevel is null)")
 
     Page<Player> findAllByParams(
@@ -58,7 +58,7 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
             + "and (:minExperience is not null and u.experience >= :minExperience or :minExperience is null) "
             + "and (:maxExperience is not null and u.experience <= :maxExperience or :maxExperience is null) "
             + "and (:minLevel is not null and u.level >= :minLevel or :minLevel is null) "
-            + "and (:maxLevel is not null and u.level >= :maxLevel or :maxLevel is null) "
+            + "and (:maxLevel is not null and u.level <= :maxLevel or :maxLevel is null) "
             + "and (:untilNextLevel is not null and u.untilNextLevel <= :untilNextLevel or :untilNextLevel is null)")
     int countByParams(
             @Param("name") String name,

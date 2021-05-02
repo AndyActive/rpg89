@@ -18,5 +18,6 @@ public interface PlayerService {
     boolean existsById(Long id);
     boolean isIdValid(Long id);
     boolean isParamsValid(Map<String, String> params);
+    boolean validParamsForUpdate(Map<String, String> params);
     boolean isAllParamsFound(Map<String, String> params);
 }

@@ -8,17 +8,20 @@ import com.game.entity.Race;
 import javax.persistence.*;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 
 
 @Entity
 @Table(name = "Player")
 public class Player {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     private String name;
     private String title;
+    @Enumerated(EnumType.STRING)
     private Race race;
+    @Enumerated(EnumType.STRING)
     private Profession profession;
     private Integer experience;
     private Integer untilNextLevel;
@@ -30,14 +33,14 @@ public class Player {
     public Player() {
     }
 
-    public Player( String name, String title, Race race, Profession profession, Integer experience, Integer level, Integer untilNextLevel, Date birthday, Boolean banned) {
+    public Player( String name, String title, Race race, Profession profession, Integer experience, Date birthday, Boolean banned) {
         this.name = name;
         this.title = title;
         this.race = race;
         this.profession = profession;
         this.experience = experience;
-        this.level=level;
-        this.untilNextLevel = untilNextLevel;
+        //this.level=level;
+        //this.untilNextLevel = untilNextLevel;
         this.birthday = birthday;
         this.banned=banned;
 
@@ -67,12 +70,8 @@ public class Player {
         this.level = level;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
 
     public String getName() {
@@ -91,7 +90,6 @@ public class Player {
         this.title = title;
     }
    // @Column(name = "race")
-    @Enumerated(EnumType.STRING)
     public Race getRace() {
         return race;
     }
@@ -100,7 +98,6 @@ public class Player {
         this.race = race;
     }
    // @Column(name = "profession")
-    @Enumerated(EnumType.STRING)
     public Profession getProfession() {
         return profession;
     }
@@ -143,15 +140,27 @@ public class Player {
 
 
 
-   public void updateExperience() {
-       Integer rating =(int) (Math.sqrt(2500+200*getExperience())-50)/ 100;
-       setExperience(rating);
+   public void calculateLevel() {
+       Integer newLevel =(int) (Math.sqrt(2500+200*getExperience())-50)/ 100;
+       setLevel(newLevel);
     }
-    public int toUpdateExperience(Player player) {
-        Integer upLevel = 50*(player.level+1)*(player.level+2)-player.getExperience();
-        return upLevel;
+    public void calculateUntilNextLevel() {
+        Integer untilNextLevel = 50*(level+1)*(level+2)-getExperience();
+        setUntilNextLevel(untilNextLevel);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Player player = (Player) o;
+        return id.equals(player.id) && name.equals(player.name) && title.equals(player.title) && race == player.race && profession == player.profession && experience.equals(player.experience) && Objects.equals(untilNextLevel, player.untilNextLevel) && birthday.equals(player.birthday) && banned.equals(player.banned) && Objects.equals(level, player.level);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, title, race, profession, experience, untilNextLevel, birthday, banned, level);
+    }
 
     public static void main(String[] args) {
 //        Calendar prodDateValue = Calendar.getInstance();

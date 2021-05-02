@@ -16,7 +16,7 @@ import java.util.Map;
 public class PlayerController {
 
         @Autowired
-        private final PlayerService playerService;
+        private PlayerService playerService;
 
         public PlayerController(PlayerService playerService) {
             this.playerService= playerService;
@@ -71,7 +71,11 @@ public class PlayerController {
         ResponseEntity<Player> updatePlayer(@PathVariable Long id, @RequestBody Map<String, String> params){
             ResponseEntity<Player> badResponse = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
             ResponseEntity<Player> nfResponse = new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            if (!playerService.isIdValid(id) || !playerService.isParamsValid(params)) {
+            if (params.isEmpty()) {
+                Player player = playerService.findById(id);
+                return new ResponseEntity<>(player, HttpStatus.OK);
+            }
+            if (!playerService.isIdValid(id) || !playerService.validParamsForUpdate(params)) {
                 return badResponse;
             }
             Player result = playerService.updatePlayer(id, params);
